@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# OS files
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+
+# Model / large files
+*.pt
+*.bin
+
+# Do not track uploaded PDFs
+uploaded_files/
