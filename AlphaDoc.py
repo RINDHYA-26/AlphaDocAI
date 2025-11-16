@@ -26,12 +26,24 @@ def load_whisper_model():
 
 def load_pdf_text(files):
     full_text = ""
+
+    failed_files = []
+
     for f in files:
         pdf = PdfReader(f)
+        file_text = ""
         for page in pdf.pages:
             txt = page.extract_text()
             if txt:
-                full_text += txt + " "
+                file_text += txt + " "
+        if file_text.strip() == "":
+            failed_files.append(f.name)
+        else:
+            full_text += file_text
+
+    if failed_files:
+        st.warning(f"⚠️ Could not extract text from: {', '.join(failed_files)}")
+
     return clean_text(full_text)
 
 def split_text(text, chunk_size=500):
@@ -131,7 +143,7 @@ embedder = None
 chunks = []
 chunk_embeddings = np.array([])
 if uploaded_files:
-    st.success("📚 PDFs uploaded successfully!")
+    st.success("📚 PDFs uploaded successfully!✔")
 
     st.markdown("### 📄 Uploaded Files:")
     for file in uploaded_files:
@@ -190,13 +202,25 @@ QUESTION:
 """
         answer = ask_model(client, model_name, prompt)
 
+        # ⭐ UPDATED → Wikipedia fallback if doc has no answer
+        if "Information not in document" in answer:
+            try:
+                wiki_summary = wikipedia.summary(transcribed_text, sentences=4)
+            except:
+               #wiki_summary = "No Wikipedia results found."
+               wiki_summary = ask_model(
+                   client,
+                   model_name,
+                   f"Explain this topic simply: {transcribed_text}"
+               )
+            answer = f"It’s not mentioned in the document, but here’s the Wikipedia answer:\n\n{wiki_summary}"  # ⭐ UPDATED
+
     else:
         # Wikipedia fallback
         try:
             wiki_summary = wikipedia.summary(transcribed_text, sentences=4)
         except:
             wiki_summary = "No Wikipedia results found."
-
         prompt = f"""
 Use ONLY this Wikipedia information to answer:
 
@@ -209,6 +233,24 @@ Question: {transcribed_text}
     st.session_state["chat"].append(("user", transcribed_text))
     st.session_state["chat"].append(("assistant", answer))
 
+#     else:
+#         # Wikipedia fallback
+#         try:
+#             wiki_summary = wikipedia.summary(transcribed_text, sentences=4)
+#         except:
+#             wiki_summary = "No Wikipedia results found."
+#
+#         prompt = f"""
+# Use ONLY this Wikipedia information to answer:
+#
+# {wiki_summary}
+#
+# Question: {transcribed_text}
+# """
+#         answer = ask_model(client, model_name, prompt)
+#
+#     st.session_state["chat"].append(("user", transcribed_text))
+#     st.session_state["chat"].append(("assistant", answer))
 
 # ----------------------------------
 # DOCUMENT MODE (TEXT INPUT)
@@ -217,16 +259,9 @@ if uploaded_files:
     st.markdown("### 💬 Ask your question")
     query = st.text_input("Type your question here:")
 
-    with st.expander("✨ Suggested Prompts"):
-        st.markdown("""
-            - **Summarize the document in 5 bullet points**
-            - **What are the key topics covered?**
-            - **Explain the concept in simple words**
-            - **List definitions from the document**
-            - **What does the document say about <topic>?**
-            """)
 
     if query:
+        st.session_state["doc_query"] = "" #updated line248
         top_chunks = get_top_k_chunks(query, embedder, chunks, chunk_embeddings)
         context = "\n\n".join(top_chunks)
 
@@ -242,10 +277,23 @@ QUESTION:
 """
 
         answer = ask_model(client, model_name, prompt)
+        if "Information not in document" in answer: #updated
+            try:
+                wiki_summary = wikipedia.summary(query, sentences=4)
+            except:
+                wiki_summary = "No Wikipedia results found."
 
+            answer = f"It’s not mentioned in the document, but here’s the Wikipedia answer:\n\n{wiki_summary}"
         st.session_state["chat"].append(("user", query))
         st.session_state["chat"].append(("assistant", answer))
-
+    with st.expander("✨ Suggested Prompts"): #updated
+        st.markdown("""
+            - **Summarize the document in 5 bullet points**
+            - **What are the key topics covered?**
+            - **Explain the concept in simple words**
+            - **List definitions from the document**
+            - **What does the document say about <topic>?**
+            """)
 
 # ----------------------------------
 # WIKIPEDIA MODE
@@ -254,6 +302,7 @@ else:
     query = st.text_input("Ask anything:")
 
     if query:
+        st.session_state["general_query"] = "" #updated if block
         try:
             wiki_summary = wikipedia.summary(query, sentences=4)
         except:
