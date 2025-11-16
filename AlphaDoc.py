@@ -9,7 +9,7 @@ import os
 from faster_whisper import WhisperModel
 from groq import Groq
 
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 model_name = "llama-3.1-8b-instant"
 print("Loaded client successfully!")
 # ----------------------------------
