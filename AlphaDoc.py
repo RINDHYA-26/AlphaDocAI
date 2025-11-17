@@ -75,11 +75,9 @@ if "chat" not in st.session_state:
 st.markdown("""
 <style>
 .stApp {
-     background-image: linear-gradient(rgba(20,30,48,0.70), rgba(25,38,72,0.70)),
-                      url('https://images.unsplash.com/photo-1503264116251-35a269479413?auto=format&fit=crop&w=1600&q=80');
+    background-image: linear-gradient(135deg, #1e2a38 0%, #2c3e50 50%, #34495e 100%);
     background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
+    background-attachment: fixed;
     font-family: 'Segoe UI', sans-serif;
     color: #e6eef8;
 }
@@ -265,19 +263,13 @@ QUESTION:
         st.session_state["chat"].append(("assistant", answer))
     with st.expander("✨ Suggested Prompts"): #updated
         st.markdown("""
-            - **Summarize the document in 5 bullet points**
-            - **What are the key topics covered?**
-            - **Explain the concept in simple words**
-            - **List definitions from the document**
-            - **What does the document say about <topic>?**
+            - **📖 Summarize the document in 5 bullet points based only on its content.**
+            - **🔍 What does the document say about '<topic>'?**
+            - **📌 Explain the concept in simple words**
+            - **📚 List all definitions or terms explained in the document.**
+            - **🧠 Explain the concept of '<topic>' using only the document.**
             """)
 
-# ----------------------------------
-# WIKIPEDIA MODE
-# ----------------------------------
-# ----------------------------------
-# WIKIPEDIA + GENERAL KNOWLEDGE MODE
-# ----------------------------------
 else:
     query = st.text_input("Ask anything:")
     if query:
