@@ -12,9 +12,7 @@ from groq import Groq
 client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 model_name = "llama-3.1-8b-instant"
 print("Loaded client successfully!")
-# ----------------------------------
-# HELPERS
-# ----------------------------------
+
 def clean_text(text):
     text = text.replace("\n", " ").replace("\t", " ")
     return " ".join(text.split())
@@ -59,7 +57,6 @@ def get_top_k_chunks(query, model, chunks, chunk_embeddings, k=3):
     top_idx = np.argsort(scores)[::-1][:k]
     return [chunks[i] for i in top_idx]
 
-# 🔥 UPDATED — ask_model now uses GROQ instead of HuggingFace
 def ask_model(client, model_name, prompt):
     response = client.chat.completions.create(
         model=model_name,
@@ -67,8 +64,6 @@ def ask_model(client, model_name, prompt):
     )
     return response.choices[0].message.content
 
-
-# UI SETUP
 st.set_page_config(page_title="AlphaDoc AI Chatbot", page_icon="🔍", layout="wide")
 
 st.header(" 📚 🤖 AlphaDoc AI Chatbot")
@@ -117,13 +112,9 @@ st.markdown("""
 with st.sidebar:
     st.header("⚙️ Settings & Uploads")
 
-    # ❌ REMOVED HuggingFace token
-    # hf_token = st.text_input("🔑 HuggingFace Token", type="password")
-
-    # 🔥 UPDATED — GROQ model name
     model_name = st.text_input(
         "🤖 Model Name (GROQ Models)",
-        "llama-3.1-8b-instant"  # default: free fast GROQ model
+        "llama-3.1-8b-instant"
     )
 
     uploaded_files = st.file_uploader(
@@ -238,26 +229,6 @@ Question: {transcribed_text}
 
     st.session_state["chat"].append(("user", transcribed_text))
     st.session_state["chat"].append(("assistant", answer))
-
-#     else:
-#         # Wikipedia fallback
-#         try:
-#             wiki_summary = wikipedia.summary(transcribed_text, sentences=4)
-#         except:
-#             wiki_summary = "No Wikipedia results found."
-#
-#         prompt = f"""
-# Use ONLY this Wikipedia information to answer:
-#
-# {wiki_summary}
-#
-# Question: {transcribed_text}
-# """
-#         answer = ask_model(client, model_name, prompt)
-#
-#     st.session_state["chat"].append(("user", transcribed_text))
-#     st.session_state["chat"].append(("assistant", answer))
-
 # ----------------------------------
 # DOCUMENT MODE (TEXT INPUT)
 # ----------------------------------
@@ -315,7 +286,8 @@ else:
         try:
             wiki_summary = wikipedia.summary(query, sentences=4)
             prompt = f"""
-Use ONLY this Wikipedia information to answer:
+        You are an AI assistant. Use the following Wikipedia information to answer the question factually and directly.
+
 
 {wiki_summary}
 
@@ -325,17 +297,13 @@ Question: {query}
 
         except:
             # Wikipedia failed → fallback to general explanation
-            model_explanation = ask_model(
-                client,
-                model_name,
-                f"Explain this topic simply: {query}"
-            )
-            answer = (
-                "No Wikipedia results were found.\n\n"
-                "Here’s a simplified explanation instead:\n\n"
-                f"{model_explanation}"
-            )
+            prompt = f"""
+            You are an AI assistant. Provide a direct and accurate answer to this general knowledge question.
 
+
+            {query}
+            """
+            answer = ask_model(client, model_name, prompt)
         st.session_state["chat"].append(("user", query))
         st.session_state["chat"].append(("assistant", answer))
 
