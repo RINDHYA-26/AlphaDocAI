@@ -206,14 +206,20 @@ QUESTION:
         if "Information not in document" in answer:
             try:
                 wiki_summary = wikipedia.summary(transcribed_text, sentences=4)
+                answer = f"It’s not mentioned in the document, but here’s what I found:\n\n{wiki_summary}" #added ##$
             except:
                #wiki_summary = "No Wikipedia results found."
-               wiki_summary = ask_model(
+               model_explanation = ask_model(
                    client,
                    model_name,
                    f"Explain this topic simply: {transcribed_text}"
                )
-            answer = f"It’s not mentioned in the document, but here’s the Wikipedia answer:\n\n{wiki_summary}"  # ⭐ UPDATED
+               answer = (
+                "It’s not mentioned in the document, "
+                "and no Wikipedia results were found.\n\n"
+                "Here’s a simplified explanation instead:\n\n"
+                f"{model_explanation}"
+            )  # ⭐ UPDATED
 
     else:
         # Wikipedia fallback
@@ -298,28 +304,40 @@ QUESTION:
 # ----------------------------------
 # WIKIPEDIA MODE
 # ----------------------------------
+# ----------------------------------
+# WIKIPEDIA + GENERAL KNOWLEDGE MODE
+# ----------------------------------
 else:
     query = st.text_input("Ask anything:")
-
     if query:
-        st.session_state["general_query"] = "" #updated if block
+        st.session_state["general_query"] = ""
+
         try:
             wiki_summary = wikipedia.summary(query, sentences=4)
-        except:
-            wiki_summary = "No Wikipedia results found."
-
-        prompt = f"""
+            prompt = f"""
 Use ONLY this Wikipedia information to answer:
 
 {wiki_summary}
 
 Question: {query}
 """
-        answer = ask_model(client, model_name, prompt)
+            answer = ask_model(client, model_name, prompt)
+
+        except:
+            # Wikipedia failed → fallback to general explanation
+            model_explanation = ask_model(
+                client,
+                model_name,
+                f"Explain this topic simply: {query}"
+            )
+            answer = (
+                "No Wikipedia results were found.\n\n"
+                "Here’s a simplified explanation instead:\n\n"
+                f"{model_explanation}"
+            )
 
         st.session_state["chat"].append(("user", query))
         st.session_state["chat"].append(("assistant", answer))
-
 
 # ----------------------------------
 # CHAT DISPLAY
