@@ -56,53 +56,60 @@ UI	: Custom CSS + HTML styling
 
 Architecture
 
-                    ┌──────────────────┐
-                    │      USER        │
-                    │  (Text / Voice)  │
-                    └───────┬──────────┘
-                            │
-                ┌───────────▼────────────┐
-                │      Streamlit UI       │
-                │ Chat, Uploads, Sidebar  │
-                └───────────┬────────────┘
-                            │
-         ┌──────────────────▼────────────────────┐
-         │          Request Handler               │
-         │ (Identify: PDF? Voice? Wikipedia?)     │
-         └───────────┬───────────────────────────┘
-                     │
-     ┌───────────────┼──────────────────────────────┐
-     
-     │               │                               │
-     
-┌────▼─────┐   ┌─────▼───────┐                ┌─────▼──────┐
-│ PDF Flow │   │ Voice Flow   │                │ Wiki Flow  │
-└────┬─────┘   └─────┬────────┘                └─────┬──────┘
+                                   ┌─────────────────────────┐
+                            │        User Input        │
+                            │  • PDF Uploads           │
+                            │  • Text Questions        │
+                            │  • Voice Questions       │
+                            └────────────┬────────────┘
+                                         │
+                                         ▼
+                        ┌──────────────────────────────────┐
+                        │         Mode Controller          │
+                        │  Streamlit (Home / Text / Voice) │
+                        └────────────┬─────────────────────┘
+                                     │
+                                     ▼
+        ┌─────────────────────────────────────────────────────────────────┐
+        │                         PDF Processing                          │
+        │  • PyPDF2 → Extract raw text                                    │
+        │  • Clean + normalize text                                       │
+        │  • Chunk text (200 words)                                       │
+        │  • SentenceTransformers → Generate embeddings                   │
+        │  • NumPy → Vector similarity search (Top-K chunk retrieval)     │
+        └───────────────────────┬─────────────────────────────────────────┘
+                                │
+                                ▼
+                     ┌────────────────────┐
+                     │  Is answer found?  │
+                     └───────┬────────────┘
+                             │  YES
+                             ▼
+                     ┌────────────────────┐
+                     │  LLaMA Answering   │
+                     │ Groq API (8B model)│
+                     └─────────┬──────────┘
+                               │
+                               ▼
+                         FINAL ANSWER
+                               ▲
+                               │ NO
+                               │
+                               ▼
+         ┌─────────────────────────────── Wikipedia Fallback ───────────────────────────────┐
+         │  • wikipedia.summary()                                                           │
+         │  • If successful → Send combined prompt to LLaMA                                │
+         │  • If fails → Skip to LLaMA model fallback                                       │
+         └───────────────────────────────┬──────────────────────────────────────────────────┘
+                                         │
+                                         ▼
+                       ┌─────────────────────────────────────┐
+                       │     LLaMA Reasoning Fallback        │
+                       │ (General knowledge, coding, logic)  │
+                       └──────────────────┬───────────────────┘
+                                          │
+                                          ▼
+                                   FINAL ANSWER
 
-     │               │                               │
-     │       ┌───────▼───────────┐                   │
-     │       │ Faster Whisper STT│                   │
-     │       └───────┬───────────┘                   │
-     │               │                               │
-┌────▼─────────┐     │                      ┌────────▼──────────┐
-│ PDF Extractor│     │                      │ Wikipedia Fetcher  │
-└────┬─────────┘     │                      └────────┬──────────┘
-     │               │                               │
-┌────▼─────────┐     │                      ┌────────▼──────────┐
-│Text Splitter │     │                      │ Summary Generator │
-└────┬─────────┘     │                      └────────┬──────────┘
-     │               │                               │
-┌────▼───────────────▼──────┐              ┌────────▼──────────┐
-│ Embed + Vector Similarity  │              │ Answer Synthesizer │
-└────┬───────────────────────┘              └────────┬──────────┘
-     │                                               │
-     └──────────────┬────────────────────────────────┘
-                    │
-           ┌────────▼───────────┐
-           │ Groq LLaMA-3.1 API │ (Reasoning, final response)
-           └────────┬───────────┘
-                    │
-           ┌────────▼───────────┐
-           │   Streamlit UI     │
-           │   (Chat Output)    │
-           └────────────────────┘
+
+
