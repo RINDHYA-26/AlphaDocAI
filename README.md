@@ -55,6 +55,7 @@ UI	: Custom CSS + HTML styling
 ![Intelexi UI](assets/home_screen.png)
 
 Architecture
+
                     ┌──────────────────┐
                     │      USER        │
                     │  (Text / Voice)  │
@@ -71,10 +72,13 @@ Architecture
          └───────────┬───────────────────────────┘
                      │
      ┌───────────────┼──────────────────────────────┐
+     
      │               │                               │
+     
 ┌────▼─────┐   ┌─────▼───────┐                ┌─────▼──────┐
 │ PDF Flow │   │ Voice Flow   │                │ Wiki Flow  │
 └────┬─────┘   └─────┬────────┘                └─────┬──────┘
+
      │               │                               │
      │       ┌───────▼───────────┐                   │
      │       │ Faster Whisper STT│                   │
@@ -102,4 +106,3 @@ Architecture
            │   Streamlit UI     │
            │   (Chat Output)    │
            └────────────────────┘
-
