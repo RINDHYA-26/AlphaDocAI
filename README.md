@@ -1,5 +1,5 @@
 🤖 INTELEXI — Ask. Understand. Intelexi.
-![Intellexi Sticker](/assets/A_digital_illustration_features_a_sticker-style_lo.png)
+
 Intelexi is an intelligent, multi-mode document assistant built using Streamlit, powered by Groq LLaMA-3 models, and enhanced with semantic search, PDF understanding, and speech-to-text capabilities.
 
 It provides highly accurate responses based on:
