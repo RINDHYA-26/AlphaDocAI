@@ -37,3 +37,5 @@ PyPDF2	: PDF text extraction
 SentenceTransformers	: Embedding + semantic chunk matching
 Wikipedia API	: External fallback knowledge source
 NumPy	: Embedding similarity scoring
+
+![Intelexi UI](assets/home_screen.png)
