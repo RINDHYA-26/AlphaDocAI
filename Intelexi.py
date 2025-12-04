@@ -1,5 +1,5 @@
 import streamlit as st
-from PyPDF2 import PdfReader
+import pdfplumber
 from sentence_transformers import SentenceTransformer
 import wikipedia
 import numpy as np
@@ -29,22 +29,26 @@ def load_whisper_model():
 def load_pdf_text(files):
     full_text = ""
     failed_files = []
+
     for f in files:
         try:
-            pdf = PdfReader(f)
-            file_text = ""
-            for page in pdf.pages:
-                txt = page.extract_text()
-                if txt:
-                    file_text += txt + " "
+            with pdfplumber.open(f) as pdf:
+                file_text = ""
+                for page in pdf.pages:
+                    page_text = page.extract_text()
+                    if page_text:
+                        file_text += page_text + " "
             if file_text.strip() == "":
                 failed_files.append(f.name)
             else:
                 full_text += file_text
-        except Exception as e:
+
+        except Exception:
             failed_files.append(getattr(f, "name", "unknown"))
+
     if failed_files:
         st.warning(f"⚠️ Could not extract text from: {', '.join(failed_files)}")
+
     return clean_text(full_text)
 
 def split_text(text, chunk_size=200):
