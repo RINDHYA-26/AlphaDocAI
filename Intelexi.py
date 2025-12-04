@@ -23,7 +23,13 @@ def clean_text(text):
 def load_whisper_model():
     # 🔥 CHANGED: use session_state to ensure single load and re-use
     if "whisper_model" not in st.session_state:
-        st.session_state["whisper_model"] = WhisperModel("base", device="cpu")
+        st.session_state["whisper_model"] = WhisperModel(
+            model_size="tiny",          # ✔ tiny works on Streamlit Cloud
+            device="cpu",               # ✔ no GPU needed
+            compute_type="int8",        # ✔ prevents meta-tensor error
+            cpu_threads=2,              # ✔ safe for Cloud
+            download_root="models"      # ✔ ensures cached download
+        )
     return st.session_state["whisper_model"]
 
 def load_pdf_text(files):
