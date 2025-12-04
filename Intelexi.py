@@ -1,5 +1,5 @@
 import streamlit as st
-from PyPDF2 import PdfReader
+import pdfplumber
 from sentence_transformers import SentenceTransformer
 import wikipedia
 import numpy as np
@@ -23,34 +23,38 @@ def clean_text(text):
 def load_whisper_model():
     # 🔥 CHANGED: use session_state to ensure single load and re-use
     if "whisper_model" not in st.session_state:
-        st.session_state["whisper_model"] = WhisperModel(
-            "tiny",          # ✔ tiny works on Streamlit Cloud
-            device="cpu",               # ✔ no GPU needed
-            compute_type="int8",        # ✔ prevents meta-tensor error
-            cpu_threads=2,              # ✔ safe for Cloud
-            download_root="models")   # ✔ ensures cached download
+        st.session_state["whisper_model"] = WhisperModel( "tiny",              
+            device="cpu",          # no GPU needed
+            compute_type="int8",   # prevents meta-tensor error
+            cpu_threads=2,         # safe for cloud
+            download_root="models" # cached download
+        )
 
     return st.session_state["whisper_model"]
 
 def load_pdf_text(files):
     full_text = ""
     failed_files = []
+
     for f in files:
         try:
-            pdf = PdfReader(f)
-            file_text = ""
-            for page in pdf.pages:
-                txt = page.extract_text()
-                if txt:
-                    file_text += txt + " "
+            with pdfplumber.open(f) as pdf:
+                file_text = ""
+                for page in pdf.pages:
+                    page_text = page.extract_text()
+                    if page_text:
+                        file_text += page_text + " "
             if file_text.strip() == "":
                 failed_files.append(f.name)
             else:
                 full_text += file_text
-        except Exception as e:
+
+        except Exception:
             failed_files.append(getattr(f, "name", "unknown"))
+
     if failed_files:
         st.warning(f"⚠️ Could not extract text from: {', '.join(failed_files)}")
+
     return clean_text(full_text)
 
 def split_text(text, chunk_size=200):
